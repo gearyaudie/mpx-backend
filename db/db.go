@@ -12,7 +12,7 @@ import (
 
 // GetMongoClient initializes and returns a MongoDB client
 func GetMongoClient(uri string) (*mongo.Client, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*30)
 	defer cancel()
 
 	clientOptions := options.Client().ApplyURI(uri)

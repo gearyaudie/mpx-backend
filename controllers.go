@@ -78,7 +78,7 @@ func getAllProducts(w http.ResponseWriter, r *http.Request) {
 
 	collection := client.Database("mpxDB").Collection("products")
 
-	ctx, _ := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, _ := context.WithTimeout(context.Background(), time.Second*30)
 	cursor, err := collection.Find(ctx, bson.M{})
 
 	if err != nil {
