@@ -11,11 +11,11 @@ import (
 )
 
 // GetMongoClient initializes and returns a MongoDB client
-func GetMongoClient() (*mongo.Client, error) {
+func GetMongoClient(uri string) (*mongo.Client, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	clientOptions := options.Client().ApplyURI("mongodb+srv://gyngare:S2Va6RGS2wu78VHc@cluster0.3caihuo.mongodb.net/")
+	clientOptions := options.Client().ApplyURI(uri)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
 		return nil, err
