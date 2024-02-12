@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
+	"os/signal"
 
 	"github.com/gearyaudie/mpx-backend.git/db"
 	"github.com/gorilla/mux"
@@ -33,16 +35,39 @@ func init() {
 }
 
 func main() {
+	port := os.Getenv("PORT")
+	if port == "" {
+		log.Fatal("PORT environment variable not set.")
+	}
+
 	route := mux.NewRouter()
 
-	s := route.PathPrefix("/api").Subrouter() // Base Path
+	s := route.PathPrefix("/api").Subrouter()
 
 	// Routes
 	s.HandleFunc("/addProduct", addProduct).Methods("POST")
 	s.HandleFunc("/getAllProducts", getAllProducts).Methods("GET")
 
+	server := &http.Server{
+		Addr:    ":" + port,
+		Handler: route,
+	}
+
 	// Close the MongoDB client when the application exits
 	defer client.Disconnect(nil)
 
-	log.Fatal(http.ListenAndServe(":8000", route)) // Run Server
+	go func() {
+		log.Fatal(server.ListenAndServe())
+	}()
+
+	// Wait for interrupt signal to gracefully shut down the server
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+
+	log.Println("Shutting down...")
+	err := server.Shutdown(context.Background())
+	if err != nil {
+		log.Fatal("Error during server shutdown:", err)
+	}
 }
