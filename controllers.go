@@ -3,11 +3,13 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
 )
 
@@ -72,6 +74,7 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 
 	json.NewEncoder(w).Encode(insertResult.InsertedID)
 }
+
 func getAllProducts(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	var products []Product
@@ -92,6 +95,46 @@ func getAllProducts(w http.ResponseWriter, r *http.Request) {
 	for cursor.Next(ctx) {
 		var product Product
 		cursor.Decode(&product)
+
+		// Fetch file content from GridFS using the file ID
+		fileID, err := primitive.ObjectIDFromHex(product.Img)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{ "message": "Invalid file ID format" }`))
+			return
+		}
+
+		// Create a new GridFS bucket
+		bucket, err := gridfs.NewBucket(
+			client.Database("mpxDB"),
+		)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{ "message": "Unable to create GridFS bucket" }`))
+			return
+		}
+
+		// Open a stream to read the file content
+		fileStream, err := bucket.OpenDownloadStream(fileID)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{ "message": "Unable to open download stream for file" }`))
+			return
+		}
+		defer fileStream.Close()
+
+		// Read the file content
+		fileContent, err := ioutil.ReadAll(fileStream)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Write([]byte(`{ "message": "Unable to read file content" }`))
+			return
+		}
+
+		// Add the file content to the product struct
+		product.ImgContent = fileContent
+
+		// Append the modified product to the products slice
 		products = append(products, product)
 	}
 

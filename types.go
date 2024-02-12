@@ -1,7 +1,8 @@
 package main
 
 type Product struct {
-	Name string `json:"name"`
-	Desc string `json:"desc"`
-	Img  string `json:"img" bson:"img"`
+	Name       string `bson:"name" json:"name"`
+	Desc       string `bson:"desc" json:"desc"`
+	Img        string `bson:"img" json:"img"`
+	ImgContent []byte `bson:"imgContent" json:"imgContent"`
 }
