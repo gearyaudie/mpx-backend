@@ -51,6 +51,7 @@ func main() {
 	s.HandleFunc("/getAllProducts", getAllProducts).Methods("GET")
 	s.HandleFunc("/login", authhandlers.LoginHandler).Methods("POST")
 	s.HandleFunc("/logout", authhandlers.LogoutHandler).Methods("GET")
+	s.HandleFunc("/signup", authhandlers.SignupHandler).Methods("POST")
 
 	// Use CORS middleware
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
