@@ -8,6 +8,7 @@ import (
 	"os/signal"
 
 	"github.com/gearyaudie/mpx-backend.git/db"
+	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -48,9 +49,14 @@ func main() {
 	s.HandleFunc("/addProduct", addProduct).Methods("POST")
 	s.HandleFunc("/getAllProducts", getAllProducts).Methods("GET")
 
+	// Use CORS middleware
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000"}) // Add your frontend URL here
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
+
 	server := &http.Server{
 		Addr:    ":" + port,
-		Handler: route,
+		Handler: handlers.CORS(headersOk, originsOk, methodsOk)(route),
 	}
 
 	// Close the MongoDB client when the application exits
