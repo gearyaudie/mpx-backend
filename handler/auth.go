@@ -10,28 +10,51 @@ import (
 	"github.com/gearyaudie/mpx-backend.git/models"
 	"github.com/gearyaudie/mpx-backend.git/utils"
 	"github.com/joho/godotenv"
+	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 )
 
 var users = make(map[string]models.User)
 
 func LoginHandler(w http.ResponseWriter, r *http.Request) {
-	var user models.User
-	err := json.NewDecoder(r.Body).Decode(&user)
+	var inputUser models.User
+	err := json.NewDecoder(r.Body).Decode(&inputUser)
 
 	if err != nil {
 		http.Error(w, "Invalid request payload", http.StatusBadRequest)
 		return
 	}
 
-	storedUser, ok := users[user.Email]
-	if !ok {
+	// Load environment variables from .env file
+	if err := godotenv.Load(); err != nil {
+		log.Fatal("Error loading .env file")
+	}
+
+	// Get MongoDB URI from environment variable
+	mongoURI := os.Getenv("MONGODB_URI") + "?tls=true"
+	if mongoURI == "" {
+		log.Fatal("MONGODB_URI environment variable not set.")
+	}
+
+	// Connect to MongoDB using the MONGODB_URI environment variable
+	client, err := db.GetMongoClient(mongoURI)
+	if err != nil {
+		http.Error(w, "Error connecting to the database", http.StatusInternalServerError)
+		return
+	}
+	defer client.Disconnect(nil)
+
+	// Query the user from the database
+	userCollection := client.Database("mpxDB").Collection("users")
+	var storedUser models.User
+	err = userCollection.FindOne(r.Context(), bson.M{"email": inputUser.Email}).Decode(&storedUser)
+	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
 	}
 
 	// Compare hashed passwords
-	err = bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(user.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(storedUser.Password), []byte(inputUser.Password))
 	if err != nil {
 		http.Error(w, "Invalid credentials", http.StatusUnauthorized)
 		return
