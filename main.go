@@ -8,6 +8,7 @@ import (
 	"os/signal"
 
 	"github.com/gearyaudie/mpx-backend.git/db"
+	authhandlers "github.com/gearyaudie/mpx-backend.git/handler"
 	"github.com/gorilla/handlers"
 	"github.com/gorilla/mux"
 	"github.com/joho/godotenv"
@@ -46,13 +47,16 @@ func main() {
 	s := route.PathPrefix("/api").Subrouter()
 
 	// Routes
-	s.HandleFunc("/addProduct", addProduct).Methods("POST")
+	s.HandleFunc("/addProduct", RequireLogin(addProduct)).Methods("POST")
 	s.HandleFunc("/getAllProducts", getAllProducts).Methods("GET")
+	s.HandleFunc("/login", authhandlers.LoginHandler).Methods("POST")
+	s.HandleFunc("/logout", authhandlers.LogoutHandler).Methods("GET")
 
 	// Use CORS middleware
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
 	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000"}) // Add your frontend URL here
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
+	// Middleware for authentication
 
 	server := &http.Server{
 		Addr:    ":" + port,
@@ -75,5 +79,12 @@ func main() {
 	err := server.Shutdown(context.Background())
 	if err != nil {
 		log.Fatal("Error during server shutdown:", err)
+	}
+}
+
+// AuthenticatedAddProductHandler is a handler function with authentication middleware
+func RequireLogin(handlerFunc http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		authhandlers.AuthenticationMiddleware(handlerFunc).ServeHTTP(w, r)
 	}
 }
