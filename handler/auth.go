@@ -67,14 +67,21 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "session_token",
-		Value:    token,
-		HttpOnly: true,
-	})
+	// Set the token in the response
+	responseData := map[string]string{"token": token}
+	responseJSON, err := json.Marshal(responseData)
+	if err != nil {
+		http.Error(w, "Error encoding response data", http.StatusInternalServerError)
+		return
+	}
 
+	// Set the content type header
+	w.Header().Set("Content-Type", "application/json")
+
+	// Write the response with the token
 	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Login successful"))
+	w.Write(responseJSON)
+
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
