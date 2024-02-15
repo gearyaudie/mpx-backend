@@ -44,14 +44,14 @@ func main() {
 
 	// Use CORS middleware
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
-	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000"}) // Add your frontend URL here
+	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000", "http://localhost:3000/dashboard"}) // Add your frontend URL here
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
 
 	route := mux.NewRouter()
 	s := route.PathPrefix("/api").Subrouter()
 
 	// Routes
-	s.HandleFunc("/addProduct", addProduct).Methods("POST")
+	s.HandleFunc("/addProduct", authhandlers.RequireLogin(addProduct)).Methods("POST")
 	s.HandleFunc("/getAllProducts", getAllProducts).Methods("GET")
 	s.HandleFunc("/login", authhandlers.LoginHandler).Methods("POST")
 	s.HandleFunc("/logout", authhandlers.LogoutHandler).Methods("GET")
