@@ -51,7 +51,7 @@ func main() {
 	s := route.PathPrefix("/api").Subrouter()
 
 	// Routes
-	s.HandleFunc("/addProduct", RequireLogin(addProduct)).Methods("POST")
+	s.HandleFunc("/addProduct", authhandlers.RequireLogin(addProduct)).Methods("POST")
 	s.HandleFunc("/getAllProducts", getAllProducts).Methods("GET")
 	s.HandleFunc("/login", authhandlers.LoginHandler).Methods("POST")
 	s.HandleFunc("/logout", authhandlers.LogoutHandler).Methods("GET")
@@ -83,8 +83,8 @@ func main() {
 }
 
 // AuthenticatedAddProductHandler is a handler function with authentication middleware
-func RequireLogin(handlerFunc http.HandlerFunc) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		authhandlers.AuthenticationMiddleware(handlerFunc).ServeHTTP(w, r)
-	}
-}
+// func RequireLogin(handlerFunc http.HandlerFunc) http.HandlerFunc {
+// 	return func(w http.ResponseWriter, r *http.Request) {
+// 		authhandlers.AuthenticationMiddleware(handlerFunc).ServeHTTP(w, r)
+// 	}
+// }

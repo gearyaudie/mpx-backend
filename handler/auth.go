@@ -61,7 +61,7 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate session token and set it in a cookie
-	token, err := utils.GenerateToken()
+	token, err := utils.GenerateToken(storedUser.ID) // Pass user ID to GenerateToken
 	if err != nil {
 		http.Error(w, "Error generating token", http.StatusInternalServerError)
 		return
@@ -81,7 +81,6 @@ func LoginHandler(w http.ResponseWriter, r *http.Request) {
 	// Write the response with the token
 	w.WriteHeader(http.StatusOK)
 	w.Write(responseJSON)
-
 }
 
 func LogoutHandler(w http.ResponseWriter, r *http.Request) {
