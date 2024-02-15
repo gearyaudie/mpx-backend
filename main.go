@@ -51,16 +51,17 @@ func main() {
 	s := route.PathPrefix("/api").Subrouter()
 
 	// Routes
-	s.HandleFunc("/addProduct", authhandlers.RequireLogin(addProduct)).Methods("POST")
+	s.HandleFunc("/addProduct", addProduct).Methods("POST")
 	s.HandleFunc("/getAllProducts", getAllProducts).Methods("GET")
 	s.HandleFunc("/login", authhandlers.LoginHandler).Methods("POST")
 	s.HandleFunc("/logout", authhandlers.LogoutHandler).Methods("GET")
 	s.HandleFunc("/signup", authhandlers.SignupHandler).Methods("POST")
 
 	// Middleware for authentication
+	corsMiddleware := handlers.CORS(headersOk, originsOk, methodsOk)
 	server := &http.Server{
 		Addr:    ":" + port,
-		Handler: handlers.CORS(headersOk, originsOk, methodsOk)(route),
+		Handler: corsMiddleware(route),
 	}
 
 	// Close the MongoDB client when the application exits
@@ -81,10 +82,3 @@ func main() {
 		log.Fatal("Error during server shutdown:", err)
 	}
 }
-
-// AuthenticatedAddProductHandler is a handler function with authentication middleware
-// func RequireLogin(handlerFunc http.HandlerFunc) http.HandlerFunc {
-// 	return func(w http.ResponseWriter, r *http.Request) {
-// 		authhandlers.AuthenticationMiddleware(handlerFunc).ServeHTTP(w, r)
-// 	}
-// }
