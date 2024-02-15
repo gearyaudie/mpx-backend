@@ -42,8 +42,12 @@ func main() {
 		log.Fatal("PORT environment variable not set.")
 	}
 
-	route := mux.NewRouter()
+	// Use CORS middleware
+	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
+	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000"}) // Add your frontend URL here
+	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
 
+	route := mux.NewRouter()
 	s := route.PathPrefix("/api").Subrouter()
 
 	// Routes
@@ -53,12 +57,7 @@ func main() {
 	s.HandleFunc("/logout", authhandlers.LogoutHandler).Methods("GET")
 	s.HandleFunc("/signup", authhandlers.SignupHandler).Methods("POST")
 
-	// Use CORS middleware
-	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
-	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000"}) // Add your frontend URL here
-	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
 	// Middleware for authentication
-
 	server := &http.Server{
 		Addr:    ":" + port,
 		Handler: handlers.CORS(headersOk, originsOk, methodsOk)(route),

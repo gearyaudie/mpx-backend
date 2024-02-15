@@ -29,6 +29,8 @@ func addProduct(w http.ResponseWriter, r *http.Request) {
 	productName := r.FormValue("name")
 	description := r.FormValue("desc")
 
+	w.Header().Set("Content-Type", "multipart/form-data")
+
 	// Create a Product struct with form values
 	product := Product{
 		Name: productName,
