@@ -47,7 +47,7 @@ func main() {
 	originsOk := handlers.AllowedOrigins([]string{
 		"http://localhost:3000",
 		"http://localhost:3000/dashboard",
-		"https://celebrated-twilight-3a6c50.netlify.app/",
+		"https://celebrated-twilight-3a6c50.netlify.app",
 	})
 	// Add your frontend URL here
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
