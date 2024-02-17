@@ -44,7 +44,12 @@ func main() {
 
 	// Use CORS middleware
 	headersOk := handlers.AllowedHeaders([]string{"X-Requested-With", "Content-Type", "Authorization"})
-	originsOk := handlers.AllowedOrigins([]string{"http://localhost:3000", "http://localhost:3000/dashboard"}) // Add your frontend URL here
+	originsOk := handlers.AllowedOrigins([]string{
+		"http://localhost:3000",
+		"http://localhost:3000/dashboard",
+		"https://celebrated-twilight-3a6c50.netlify.app/",
+	})
+	// Add your frontend URL here
 	methodsOk := handlers.AllowedMethods([]string{"GET", "HEAD", "POST", "PUT", "DELETE", "OPTIONS"})
 
 	route := mux.NewRouter()
