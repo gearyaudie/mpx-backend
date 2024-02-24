@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/gorilla/mux"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo/gridfs"
@@ -147,4 +148,118 @@ func getAllProducts(w http.ResponseWriter, r *http.Request) {
 	}
 
 	json.NewEncoder(w).Encode(products)
+}
+
+func editProduct(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Use mux.Vars to get the URL parameters
+	vars := mux.Vars(r)
+	productId := vars["id"]
+
+	// parse the multipart form data
+	err := r.ParseMultipartForm(10 << 20) // 10mb limit
+	if err != nil {
+		http.Error(w, "Unable to parse form", http.StatusBadRequest)
+		return
+	}
+
+	// Get form values
+	productName := r.FormValue("name")
+	description := r.FormValue("desc")
+
+	// Access the file if submitted
+	file, handler, err := r.FormFile("img")
+	if err != nil && err != http.ErrMissingFile {
+		http.Error(w, "Unable to get file", http.StatusBadRequest)
+		return
+	}
+
+	defer func() {
+		if file != nil {
+			file.Close()
+		}
+	}()
+
+	bucket, err := gridfs.NewBucket(
+		client.Database("mpxDB"),
+	)
+
+	if err != nil {
+		http.Error(w, "Unable to create GridFS bucket", http.StatusInternalServerError)
+		return
+	}
+
+	// Create a new GridFS bucket
+	var fileID primitive.ObjectID
+	if file != nil {
+		fileID, err = bucket.UploadFromStream(handler.Filename, file)
+		if err != nil {
+			http.Error(w, "Unable to upload file to GridFS", http.StatusInternalServerError)
+			return
+		}
+	}
+
+	// Convert productID to ObjectId
+	objID, err := primitive.ObjectIDFromHex(productId)
+	if err != nil {
+		http.Error(w, "Invalid product ID format", http.StatusBadRequest)
+		return
+	}
+
+	var productCollection = client.Database("mpxDB").Collection("products")
+	filter := bson.M{"_id": objID}
+
+	// Prepare update based on whether an image was submitted
+	var update bson.M
+	if file != nil {
+		update = bson.M{"$set": bson.M{
+			"name": productName,
+			"desc": description,
+			"img":  fileID.Hex(),
+		}}
+	} else {
+		update = bson.M{"$set": bson.M{
+			"name": productName,
+			"desc": description,
+		}}
+	}
+
+	_, err = productCollection.UpdateOne(context.TODO(), filter, update)
+	if err != nil {
+		log.Fatal(err)
+		http.Error(w, "Unable to update product", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte(`{"message": "Product updated successfully"}`))
+}
+
+func deleteProduct(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	// Get product ID from URL parameters
+	vars := mux.Vars(r)
+	productID := vars["id"]
+
+	// Convert productID to ObjectID
+	objID, err := primitive.ObjectIDFromHex(productID)
+	if err != nil {
+		http.Error(w, "Invalid product ID format", http.StatusBadRequest)
+		return
+	}
+
+	// Delete the product from the database
+	var productCollection = client.Database("mpxDB").Collection("products")
+	filter := bson.M{"_id": objID}
+
+	_, err = productCollection.DeleteOne(context.TODO(), filter)
+	if err != nil {
+		log.Fatal(err)
+		http.Error(w, "Unable to delete product", http.StatusInternalServerError)
+		return
+	}
+
+	w.Write([]byte(`{ "message": "Product deleted successfully" }`))
+
 }

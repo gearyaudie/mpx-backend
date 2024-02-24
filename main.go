@@ -57,6 +57,8 @@ func main() {
 
 	// Routes
 	s.HandleFunc("/addProduct", authhandlers.RequireLogin(addProduct)).Methods("POST")
+	s.HandleFunc("/editProduct/{id}", authhandlers.RequireLogin(editProduct)).Methods("POST")
+	s.HandleFunc("/deleteProduct/{id}", authhandlers.RequireLogin(deleteProduct)).Methods("DELETE")
 	s.HandleFunc("/getAllProducts", getAllProducts).Methods("GET")
 	s.HandleFunc("/login", authhandlers.LoginHandler).Methods("POST")
 	s.HandleFunc("/logout", authhandlers.LogoutHandler).Methods("GET")
